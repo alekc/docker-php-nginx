@@ -1,0 +1,4 @@
+#!/bin/sh
+
+## Add your cleanup tasks above this line
+echo "SERVICE ENDED: NewRelic daemon"

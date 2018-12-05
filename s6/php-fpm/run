@@ -33,23 +33,6 @@ php_value[post_max_size] = ${PHP_INI_POST_MAX_SIZE}
 php_value[upload_max_filesize] = ${PHP_INI_UPLOAD_MAX_FILESIZE}
 EOF
 
-## Configure new relic
-#if [ "${NEW_RELIC_ENABLED}" = true ]; then
-#    echo "Enabling new relic"
-#    cp "${PHP_DBG_PATH}/newrelic.so" "${PHP_LIB_PATH}/newrelic.so"
-#    cp "${PHP_DBG_PATH}/newrelic.ini" "${PHP_CONF_D}/newrelic.ini"
-#
-#    sed -ie "s/REPLACE_WITH_REAL_KEY/${NEW_RELIC_KEY}/" ${PHP_CONF_D}/newrelic.ini
-#	sed -i -e "s/PHP Application/${NEW_RELIC_APP_NAME}/g" ${PHP_CONF_D}/newrelic.ini
-#
-#    if [ "${DEBUG_CONFIG_FILES}" = true ]; then
-#        cat "${PHP_CONF_D}/newrelic.ini"
-#    fi
-#else
-#    echo "Disabling new relic"
-#    rm -f "${PHP_LIB_PATH}/newrelic.so"
-#    rm -f "${PHP_CONF_D}/newrelic.ini"
-#fi
 #
 ## Configure phpd debugger
 #if [ "${PHPED_ENABLED}" = true ]; then

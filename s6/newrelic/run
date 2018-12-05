@@ -1,0 +1,7 @@
+#!/bin/sh
+exec 2>&1 # pipe stderr to stdout
+echo "STARTED SERVICE: NewRelic daemon"
+
+## Add your service task command below
+## Call your service with exec command
+exec /usr/bin/newrelic-daemon -f --logfile /var/log/newrelic.log --loglevel=warning

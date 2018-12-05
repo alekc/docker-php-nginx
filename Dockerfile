@@ -7,6 +7,7 @@
 ARG PHP_VERSION=7.2
 ARG NUSPHERE_DEBUGGER_VERSION=9.0.11
 ARG NUSPHERE_DEBUGGER_ARC=x86_64
+ARG NEWRELIC_AGENT_VERSION=8.2.0.221
 
 ARG PHP_LIB_PATH="/usr/local/lib/php/extensions/"
 ARG PHP_DBG_PATH="/usr/local/php-dbg"
@@ -24,26 +25,31 @@ FROM base as php_builder
 ARG PHP_LIB_PATH
 ARG PHP_DBG_PATH
 ARG PHP_CONF_D
+ARG NEWRELIC_AGENT_VERSION
+
+RUN apk --no-cache add curl
+
+#NEW RELIC
+RUN echo "Installing Newrelic"
+
+RUN \
+ curl -L https://download.newrelic.com/php_agent/archive/${NEWRELIC_AGENT_VERSION}/newrelic-php5-${NEWRELIC_AGENT_VERSION}-linux-musl.tar.gz | tar -C /tmp -zx && \
+   NR_INSTALL_USE_CP_NOT_LN=1 NR_INSTALL_SILENT=1 /tmp/newrelic-php5-*/newrelic-install install
 
 
-#XDEBUG
+
+##XDEBUG
 RUN echo "Xdebug installation"
 RUN mkdir -p ${PHP_DBG_PATH}
 RUN apk add --no-cache $PHPIZE_DEPS
-RUN yes | pecl install xdebug \
-    && apk del $PHPIZE_DEPS
+RUN yes | pecl install xdebug
+    #&& apk del $PHPIZE_DEPS
 
-#NEW RELIC
-RUN echo "Installing Newrelic" \
-ARG NEW_RELIC_URL="https://download.newrelic.com/php_agent/release/newrelic-php5-8.3.0.226-linux.tar.gz"
 
-RUN echo "${NEW_RELIC_URL}"
-RUN wget -O - https://download.newrelic.com/php_agent/release/newrelic-php5-8.3.0.226-linux.tar.gz | tar -C /tmp -zx && \
-        NR_INSTALL_USE_CP_NOT_LN=1 /tmp/newrelic-php5-*/newrelic-install install && \
-        rm -rf /tmp/newrelic-php5-* /tmp/nrinstall*
 
 RUN find / -name 'xdebug.so' -type f -not -path ${PHP_DBG_PATH} -exec cp {} ${PHP_DBG_PATH}/ \;
 RUN find / -name 'newrelic.so' -type f -not -path ${PHP_DBG_PATH} -exec cp {} ${PHP_DBG_PATH}/ \;
+
 
 #RUN ls -l ${PHP_DBG_PATH}
 
@@ -212,6 +218,7 @@ RUN apk --no-cache add curl s6
 COPY --from=php_builder ${PHP_DBG_PATH}/xdebug.so ${PHP_DBG_PATH}/xdebug.so
 COPY --from=php_builder ${PHP_DBG_PATH}/newrelic.so ${PHP_DBG_PATH}/newrelic.so
 COPY --from=php_builder /usr/bin/newrelic-daemon /usr/bin/newrelic-daemon
+COPY --from=php_builder /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
 RUN mkdir -p /var/log/newrelic
 
 #ENVIRONMENT
@@ -257,9 +264,12 @@ COPY s6 /s6
 RUN chmod -R +x /s6
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS 2 #send a termination signal to whole branch
 
+COPY init.sh /
+RUN chmod +x /init.sh
+
 HEALTHCHECK --interval=1s --timeout=3s \
   CMD curl --fail http://localhost${FPM_PING_PATH} || exit 1
 
 COPY .profile /root/.ashrc
 ENV ENV="/root/.ashrc"
-ENTRYPOINT ["s6-svscan", "/s6"]
+ENTRYPOINT ["/init.sh"]
