@@ -41,16 +41,12 @@ RUN \
 RUN echo "Xdebug installation"
 RUN mkdir -p ${PHP_DBG_PATH}
 RUN apk add --no-cache $PHPIZE_DEPS
-RUN yes | pecl install xdebug
-    #&& apk del $PHPIZE_DEPS
 
-
+RUN if [ ${PHP_VERSION:0:1} = 5 ]; then yes | pecl install xdebug-2.5.5;fi
+RUN if [ ${PHP_VERSION:0:1} = 7 ]; then yes | pecl install xdebug;fi
 
 RUN find / -name 'xdebug.so' -type f -not -path ${PHP_DBG_PATH} -exec cp {} ${PHP_DBG_PATH}/ \;
 RUN find / -name 'newrelic.so' -type f -not -path ${PHP_DBG_PATH} -exec cp {} ${PHP_DBG_PATH}/ \;
-
-
-#RUN ls -l ${PHP_DBG_PATH}
 
 #################################
 ####
