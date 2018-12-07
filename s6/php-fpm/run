@@ -3,10 +3,14 @@
 cat > /usr/local/etc/php-fpm.d/www.conf <<- EOF
 [global]
 error_log = ${FPM_ERROR_LOG}
+;error_log = /proc/self/fd/2
 
 [www]
+catch_workers_output = yes
+clear_env = no
 user = www-data
 group = www-data
+access.format = "%R – %u %t \"%m %r%Q%q\" %s %f %{mili}d %{kilo}M %C%%"
 listen = /var/run/php-fpm.sock
 ping.path = ${FPM_PING_PATH}
 ping.response = ${FPM_PING_RESPONSE}

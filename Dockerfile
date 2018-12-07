@@ -9,12 +9,13 @@ ARG NUSPHERE_DEBUGGER_VERSION=9.0.11
 ARG NUSPHERE_DEBUGGER_ARC=x86_64
 ARG NEWRELIC_AGENT_VERSION=8.2.0.221
 
-ARG PHP_LIB_PATH="/usr/local/lib/php/extensions/"
 ARG PHP_DBG_PATH="/usr/local/php-dbg"
-ARG PHP_CONF_D="/usr/local/etc/php/conf.d"
 ARG NGINX_VERSION=1.15.7
 
 FROM php:${PHP_VERSION}-fpm-alpine as base
+
+# I am forced to disable this due to high pollution of ping logs in stdout.
+RUN rm /usr/local/etc/php-fpm.d/docker.conf
 
 #################################
 ####
@@ -22,9 +23,7 @@ FROM php:${PHP_VERSION}-fpm-alpine as base
 ####
 #################################
 FROM base as php_builder
-ARG PHP_LIB_PATH
 ARG PHP_DBG_PATH
-ARG PHP_CONF_D
 ARG NEWRELIC_AGENT_VERSION
 
 RUN apk --no-cache add curl
@@ -194,11 +193,6 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
         && ln -sf /dev/stdout /var/log/nginx/access.log \
         && ln -sf /dev/stderr /var/log/nginx/error.log
 
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/nginx.vh.default.conf /etc/nginx/conf.d/default.conf
-RUN mkdir -p /var/www/default
-COPY nginx/index.php /var/www/default/
-
 #################################
 ####
 ####   FINAL ASSEMBLY PAGE
@@ -223,6 +217,7 @@ RUN mkdir -p /var/log/newrelic
 
 #ENVIRONMENT
 ENV PHP_DBG_PATH ${PHP_DBG_PATH}
+ENV PHP_CONF_D /usr/local/etc/php/conf.d
 
 #newrelic
 ENV NEW_RELIC_ENABLED false
@@ -266,8 +261,15 @@ RUN mkdir ${PHP_DBG_PATH}/s6/
 RUN mv /s6/newrelic ${PHP_DBG_PATH}/s6/
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS 2 #send a termination signal to whole branch
 
+#Prepare init
 COPY init.sh /
 RUN chmod +x /init.sh
+
+#Prepare nginx config
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/nginx.vh.default.conf /etc/nginx/conf.d/default.conf
+RUN mkdir -p /var/www/default
+COPY nginx/index.php /var/www/default/
 
 HEALTHCHECK --interval=1s --timeout=3s \
   CMD curl --fail http://localhost${FPM_PING_PATH} || exit 1

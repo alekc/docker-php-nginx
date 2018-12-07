@@ -1,6 +1,9 @@
 #!/bin/sh
+#define php extensions path
+PHP_LIB_PATH=$(php-config --extension-dir)
+
 if [ "${NEW_RELIC_ENABLED}" = true ]; then
-    echo "Enabling new relic"
+    echo "Enabling new relic..."
 
     cat > ${PHP_CONF_D}/newrelic.ini <<- EOF
 extension = "newrelic.so"
@@ -12,6 +15,7 @@ newrelic.daemon.logfile = "/var/log/newrelic/newrelic-daemon.log"
 EOF
 
     ln -s "${PHP_DBG_PATH}/newrelic.so" "${PHP_LIB_PATH}/newrelic.so"
+    ln -s "${PHP_DBG_PATH}/newrelic.ini" "${PHP_CONF_D}/newrelic.ini"
     ln -s "${PHP_DBG_PATH}/s6/newrelic" /s6/
 
     if [ "${DEBUG_CONFIG_FILES}" = true ]; then
