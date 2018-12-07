@@ -262,6 +262,8 @@ ENV NUSPHERE_DBG_ALLOWED_HOSTS "172.18.0.0/24 localhost 127.0.0.1 host.docker.in
 #s6 config
 COPY s6 /s6
 RUN chmod -R +x /s6
+RUN mkdir ${PHP_DBG_PATH}/s6/
+RUN mv /s6/newrelic ${PHP_DBG_PATH}/s6/
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS 2 #send a termination signal to whole branch
 
 COPY init.sh /
