@@ -28,5 +28,11 @@ else
     rm -f /s6/newrelic
 fi
 
+# add support for custom bash file
+if [[ -x "/custom-init.sh" ]]
+then
+    /custom-init.sh
+fi
+
 # Launching s6
 s6-svscan /s6
